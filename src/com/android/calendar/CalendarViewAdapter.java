@@ -17,9 +17,11 @@
 package com.android.calendar;
 
 import com.android.calendar.CalendarController.ViewType;
+import com.android.calendar.Lunar;
 
 import android.content.Context;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.text.format.DateUtils;
 import android.text.format.Time;
 import android.view.LayoutInflater;
@@ -34,6 +36,13 @@ import java.util.Formatter;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.text.SimpleDateFormat;
 
 /*
  * The MenuSpinnerAdapter defines the look of the ActionBar's pull down menu
@@ -186,7 +195,7 @@ public class CalendarViewAdapter extends BaseAdapter {
             switch (mCurrentMainView) {
                 case ViewType.DAY:
                     weekDay.setVisibility(View.VISIBLE);
-                    weekDay.setText(buildDayOfWeek());
+                    weekDay.setText(buildDayOfWeek() + buildLunarDate(true));
                     date.setText(buildFullDate());
                     break;
                 case ViewType.WEEK:
@@ -194,17 +203,18 @@ public class CalendarViewAdapter extends BaseAdapter {
                         weekDay.setVisibility(View.VISIBLE);
                         weekDay.setText(buildWeekNum());
                     } else {
-                        weekDay.setVisibility(View.GONE);
-                    }
+                        weekDay.setVisibility(View.VISIBLE);
+                        weekDay.setText(buildDayOfWeek()+buildLunarDate(false));
+                   }
                     date.setText(buildMonthYearDate());
                     break;
                 case ViewType.MONTH:
                     weekDay.setVisibility(View.GONE);
-                    date.setText(buildMonthYearDate());
+                    date.setText(buildMonthYearDate() + buildLunarDate(false));
                     break;
                 case ViewType.AGENDA:
                     weekDay.setVisibility(View.VISIBLE);
-                    weekDay.setText(buildDayOfWeek());
+                    weekDay.setText(buildDayOfWeek() + buildLunarDate(true));
                     date.setText(buildFullDate());
                     break;
                 case ViewType.YEAR:
@@ -372,6 +382,22 @@ public class CalendarViewAdapter extends BaseAdapter {
         return yearFormat.format(new Date(mMilliTime));
     }
 
+    private String buildLunarDate(boolean isFull){
+        List<String> list = new ArrayList<String>();
+        Calendar cal = Calendar.getInstance();
+        mStringBuilder.setLength(0);
+	SimpleDateFormat sdf=new SimpleDateFormat("yyyy-MM-dd",Locale.US);
+        String date = sdf.format(new Date(mMilliTime));
+        Pattern p = Pattern.compile("\\D+|\\d+");
+        Matcher m = p.matcher(date);
+        while(m.find()){
+            list.add(m.group());
+         }
+        cal.set(Integer.parseInt(list.get(0)), Integer.parseInt(list.get(2)) - 1,Integer.parseInt(list.get(4)));
+        Lunar lunar = new Lunar(cal, mContext);
+        return isFull == true ? "   "+lunar.toString():"   "+lunar.toString().substring(0, 4);
+    }
+
     private String buildMonthYearDate() {
         mStringBuilder.setLength(0);
         String date = DateUtils.formatDateRange(
@@ -445,4 +471,5 @@ public class CalendarViewAdapter extends BaseAdapter {
     }
 
 }
+
 
